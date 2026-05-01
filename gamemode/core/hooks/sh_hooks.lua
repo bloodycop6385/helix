@@ -347,8 +347,6 @@ do
 
 		client:SetPoseParameter("move_yaw", normalizeAngle(vectorAngle(velocity)[2] - client:EyeAngles()[2]))
 
-		local sequenceOverride = clientInfo.CalcSeqOverride
-		clientInfo.CalcSeqOverride = -1
 		clientInfo.CalcIdeal = ACT_MP_STAND_IDLE
 
 		-- we could call the baseclass function, but it's faster to do it this way
@@ -369,6 +367,11 @@ do
 				clientInfo.CalcIdeal = ACT_MP_WALK
 			end
 		end
+
+		hook.Run("TranslateActivity", client, clientInfo.CalcIdeal)
+
+		local sequenceOverride = clientInfo.CalcSeqOverride
+		clientInfo.CalcSeqOverride = -1
 
 		clientInfo.m_bWasOnGround = client:OnGround()
 		clientInfo.m_bWasNoclipping = (client:GetMoveType() == MOVETYPE_NOCLIP and !client:InVehicle())
