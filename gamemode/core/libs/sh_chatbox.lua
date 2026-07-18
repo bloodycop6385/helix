@@ -63,22 +63,28 @@ Name = "Helix - Bypass OOC Timer",
 -- 	-- message can be heard by any player 1000 units away from the speaking player
 -- 	CanHear = 1000
 -- OR
--- 	CanHear = function(self, speaker, listener)
+-- 	CanHear = function(self, speaker, listener, data)
 -- 		-- the speaking player will be heard by everyone
 -- 		return true
 -- 	end
 -- @field[type=function,opt] CanSay Function to run to check whether or not a player can send a message with this chat class.
 -- By default, it will return `false` if the player is dead and `deadCanChat` is `false`. Overriding this function will prevent
 -- `deadCanChat` from working, and you must implement this functionality manually.
--- 	CanSay = function(self, speaker, text)
+-- 	CanSay = function(self, speaker, text, data)
 -- 		-- the speaker will never be able to send a message with this chat class
 -- 		return false
 -- 	end
 -- @field[type=function,opt] GetColor Function to run to set the color of a message with this chat class. You should generally
 -- stick to using `color`, but this is useful for when you want the color of the message to change with some criteria.
--- 	GetColor = function(self, speaker, text)
+-- 	GetColor = function(self, speaker, text, data)
 -- 		-- each message with this chat class will be colored a random shade of red
 -- 		return Color(math.random(120, 200), 0, 0)
+-- 	end
+-- @field[type=function,opt] GetFont Function to run to set the font of a message with this chat class. You should generally
+-- stick to using `font`, but this is useful for when you want the font of the message to change with some criteria.
+-- 	GetFont = function(self, speaker, text, data)
+-- 		-- each message with this chat class will use whatever the "w" class uses, or the standard fallback "ixChatFont".
+-- 		return ix.chat.classes.w.font or "ixChatFont"
 -- 	end
 -- @field[type=function,opt] OnChatAdd Function to run when a message with this chat class should be added to the chatbox. If
 -- using this function, make sure you end the function by calling `chat.AddText` in order for the text to show up.
@@ -261,7 +267,7 @@ function ix.chat.Parse(client, message, bNoSend)
 	-- Only send if needed.
 	if (SERVER and !bNoSend) then
 		-- Send the correct chat type out so other player see the message.
-		ix.chat.Send(client, chatType, hook.Run("PlayerMessageSend", client, chatType, message, anonymous) or message, anonymous)
+		ix.chat.Send(client, chatType, message, anonymous)
 	end
 
 	-- Return the chosen chat type and the message that was sent if needed for some reason.
@@ -354,7 +360,7 @@ if (SERVER) then
 				text = ix.chat.Format(text)
 			end
 
-			text = hook.Run("PlayerMessageSend", speaker, chatType, text, bAnonymous, receivers, rawText) or text
+			text = hook.Run("PlayerMessageSend", speaker, chatType, text, bAnonymous, receivers, rawText, data) or text
 
 			net.Start("ixChatMessage")
 				net.WriteEntity(speaker)
@@ -377,6 +383,7 @@ else
 
 			-- luacheck: globals CHAT_CLASS
 			CHAT_CLASS = class
+				CHAT_CLASS.font = (class.GetFont and class:GetFont(speaker, text, data)) or class.font or "ixChatFont"
 				class:OnChatAdd(speaker, text, anonymous, data)
 			CHAT_CLASS = nil
 		end
